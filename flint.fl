@@ -1,0 +1,24 @@
+%{
+#include <string.h>
+%}
+%option noyywrap
+%x CODE TEMPLATE FLINT
+%%
+<*>\/\/FLINT { BEGIN CODE; }
+<*>.+={{ {BEGIN FLINT; }
+
+<TEMPLATE>\[% { BEGIN FLINT; }
+<FLINT>.+ { }
+<FLINT>%\] { BEGIN TEMPLATE; }
+
+<TEMPLATE>\n { }
+
+<CODE>.|\n { ECHO; }
+%%
+int main (int argc, char* argv[]) {
+    if(argc == 2)
+      yyin = fopen(argv[1], "r");
+    yylex();
+
+    return 0;
+}
