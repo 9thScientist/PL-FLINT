@@ -1,46 +1,53 @@
 %{
 #include <string.h>
 #include <glib.h>
-#include "./sds/sds.h"
+#include "sds/sds.h"
 
 sds func; // Dynamic String for function header
 GHashTable* varstype; // Hashtable that matches variable -> type
 GQueue* lines; //Lines in the template
 sds line, att; //Dynamic Strings for current line
+
+void variable(char* name, char* type);
+void begin_function(char* name);
+void add_param_function(gpointer name, gpointer type, gpointer user_data);
+void print_line(gpointer line, gpointer user_data);
+void end_function();
+void end_line();
 %}
 %option noyywrap
-%x CODE TEMPLATE FLINT
+%x CODE TEMPLATE
 %%
 <*>\/\/FLINT { BEGIN CODE; }
-<*>.+={{ { BEGIN TEMPLATE; begin_function(yytext);  }
-<TEMPLATE>}} { end_function(); BEGIN CODE; }
 
-<FLINT>[^ ]+ { variable(yytext, "char*"); }
-<FLINT>%\] { BEGIN TEMPLATE; }
-
-<TEMPLATE>\[% {  BEGIN FLINT; } //]
+<TEMPLATE>\[%\ [^ ]+\ %\] { variable(yytext, "char*"); }
+<TEMPLATE>\}\} { end_function(); BEGIN CODE; }
+<TEMPLATE>\n { line = sdscat(line, "\\n"); end_line();}
 <TEMPLATE>. { line = sdscat(line, yytext); }
-<TEMPLATE>\n { line = sdscat(line, "\n"); end_line();}
 
+<CODE>.+=\{\{ { BEGIN TEMPLATE; begin_function(yytext); }
 <CODE>.|\n { ECHO; }
 
 %%
 void variable(char* name, char* type) {
-    g_hash_table_insert(varstype, g_strdup(name), g_strdup(type));
+    sds aux = sdsnew(name);
+    sdstrim(aux, "[% ]");
+
+    g_hash_table_insert(varstype, g_strdup(aux), g_strdup(type));
     line = sdscat(line, "%s");
-    att = sdscatprintf(att, ", %s", name);
+    att = sdscatprintf(att, ", %s", aux);
+
+    sdsfree(aux);
 }
 
 void begin_function(char* name) {
     sds aux = sdsnew(name);
-    sdstrim(name, "={{");
+    sdstrim(aux, "={");
 
     sdsfree(func);
     func = sdsempty();
     func = sdscatprintf(func, "char* %s(", aux);
 
-    sdsfree(line);
-    sdsfree(att);
     line = sdsempty();
     att  = sdsempty();
 
@@ -58,25 +65,28 @@ void print_line(gpointer line, gpointer user_data) {
 }
 
 void end_function() {
-    //Removes the last ',' appended by the add_param_function
-    if (g_hash_table_size(varstype) > 0) sdsrange(func, 1, -2);
+    g_hash_table_foreach(varstype, add_param_function, NULL);
 
-    func = sdscat(func, ") {\n\tsds str = sdsempty();\n");
+    //Removes the last ',' appended by the add_param_function
+    sdstrim(func, " ,");
+
+    func = sdscat(func, ") {\n\tsds str = sdsempty();\n\n");
     printf("%s", func);
 
     g_queue_foreach(lines, print_line, NULL);
 
-    printf("}\n");
+    printf("\n\treturn str;\n}\n");
 }
 
 void end_line() {
     sds aux = sdsempty();
 
     aux = sdscatprintf(aux, "\"%s\"%s", line, att);
-    aux = sdscatprintf(sdsempty(), "\tstr = sdscat(str, %s);", aux);
+    aux = sdscatprintf(sdsempty(), "str = sdscat(str, %s);", aux);
 
-    g_queue_push_head(lines, aux);
+    g_queue_push_tail(lines, g_strdup(aux));
 
+    sdsfree(aux);
     sdsfree(line);
     sdsfree(att);
 
@@ -86,6 +96,7 @@ void end_line() {
 
 int main (int argc, char* argv[]) {
     varstype = g_hash_table_new(NULL, g_str_equal);
+    lines = g_queue_new();
 
     if(argc == 2)
         yyin = fopen(argv[1], "r");
