@@ -82,7 +82,7 @@ void end_line() {
     sds aux = sdsempty();
 
     aux = sdscatprintf(aux, "\"%s\"%s", line, att);
-    aux = sdscatprintf(sdsempty(), "str = sdscat(str, %s);", aux);
+    aux = sdscatprintf(sdsempty(), "str = sdscatprintf(str, %s);", aux);
 
     g_queue_push_tail(lines, g_strdup(aux));
 
