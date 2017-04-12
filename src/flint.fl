@@ -19,18 +19,25 @@ sds line, att; //Dynamic Strings for current line
 <TEMPLATE>\n { line = sdscat(line, "\\n"); end_line();}
 <TEMPLATE>. { line = sdscat(line, yytext); }
 
-<CODE>.+=\{\{ { if (include_glib) printf("#include <glib.h>\n");
+<CODE>.+=\{\{ { print_include_glib(&include_glib);
                 BEGIN TEMPLATE;
                 begin_function(yytext); }
 <CODE>.|\n { ECHO; }
 
 %%
 int main (int argc, char* argv[]) {
+    int i;
     varstype = g_hash_table_new(NULL, g_str_equal);
     lines = g_queue_new();
 
-    if(argc == 2)
+    if(argc >= 2) {
         yyin = fopen(argv[1], "r");
+
+        for(i = 0; i < argc; i++) {
+            if (!strcmp(argv[i], "-o"))
+                yyout = fopen(argv[++i], "w");
+        }
+    }
     yylex();
 
     return 0;

@@ -1,5 +1,12 @@
 #include "aux.h"
 
+void print_include_glib(int* ig) {
+    if (*ig)
+        fprintf(yyout,"#include <glib.h>\n");
+
+    *ig = 0;
+}
+
 void variable(char* name, char* type) {
     sds aux = sdsnew(name);
     sdstrim(aux, "[% ]");
@@ -32,7 +39,7 @@ void add_param_function(gpointer name, gpointer type, gpointer user_data) {
 
 // Prints a transformed template line
 void print_line(gpointer line, gpointer user_data) {
-    printf("\t%s\n", line);
+    fprintf(yyout,"\t%s\n", line);
 }
 
 void end_function() {
@@ -42,11 +49,11 @@ void end_function() {
     sdstrim(func, " ,");
 
     func = sdscat(func, ") {\n\tGString *str = g_string_new(NULL);\n\n");
-    printf("%s", func);
+    fprintf(yyout,"%s", func);
 
     g_queue_foreach(lines, print_line, NULL);
 
-    printf("\n\treturn g_string_free(str, FALSE);\n}\n");
+    fprintf(yyout,"\n\treturn g_string_free(str, FALSE);\n}\n");
 }
 
 void end_line() {
