@@ -7,6 +7,11 @@ void print_include_glib(int* ig) {
     *ig = 0;
 }
 
+// Registers variable
+void reg_variable(char* name, char* type) {
+    g_hash_table_insert(varstype, g_strdup(name), g_strdup(type));
+}
+
 void variable(char* name, char* type) {
     sds aux = sdsnew(name);
     sdstrim(aux, "[% ]");
@@ -16,6 +21,34 @@ void variable(char* name, char* type) {
     att = sdscatprintf(att, ", %s", aux);
 
     sdsfree(aux);
+}
+
+// MAP <FUNC> <LENGHT> <LIST>
+void map(char* str) {
+    int i, c;
+    sds *tokens;
+    sds aux = sdsnew(str), att_aux = sdsempty(), for_aux = sdsempty();
+    sdstrim(aux, "[% ]");
+
+    tokens = sdssplitlen(aux, sdslen(aux), " ", 1, &c);
+
+    reg_variable(tokens[2], "int");
+    reg_variable(tokens[3], "char**");
+    att_aux = sdscatprintf(att_aux, "%s(%s[i])", tokens[1], tokens[3]);
+
+    for_aux = sdscatprintf(for_aux, "for(int i = 0; i < %s; i++) {", tokens[2]);
+    bprint(for_aux);
+
+    line = sdscat(line, "%s");
+    att = sdscatprintf(att, ", %s", att_aux);
+
+    end_line();
+    bprint("}");
+
+    sdsfreesplitres(tokens, c);
+    sdsfree(aux);
+    sdsfree(att_aux);
+    sdsfree(for_aux);
 }
 
 void begin_function(char* name) {
@@ -54,6 +87,9 @@ void end_function() {
     g_queue_foreach(lines, print_line, NULL);
 
     fprintf(yyout,"\n\treturn g_string_free(str, FALSE);\n}\n");
+
+    g_queue_free_full(lines, g_free);
+    g_hash_table_remove_all(varstype);
 }
 
 void end_line() {
@@ -62,7 +98,7 @@ void end_line() {
     aux = sdscatprintf(aux, "\"%s\"%s", line, att);
     aux = sdscatprintf(sdsempty(), "g_string_append_printf(str, %s);", aux);
 
-    g_queue_push_tail(lines, g_strdup(aux));
+    bprint(aux);
 
     sdsfree(aux);
     sdsfree(line);
@@ -72,4 +108,7 @@ void end_line() {
     att  = sdsempty();
 }
 
-
+// Prints line to buffer
+void bprint(char *line) {
+    g_queue_push_tail(lines, g_strdup(line));
+}
