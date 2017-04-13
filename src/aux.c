@@ -7,24 +7,30 @@ void print_include_glib(int* ig) {
     *ig = 0;
 
 }
-// Anotates a inline variable and adds it to the current line
-void variable(char* name) {
-    sds aux = sdsnew(name);
-    sdstrim(aux, "[% ]");
 
-    reg_variable(b, aux, "char*");
-    add_attribute(b, aux);
+// Declares a new variable
+// VAR <TYPE> <NAME>
+void flint_var(char* str) {
+    sds cmd = sdsnew(str);
+    sds *tokens;
+    int c;
 
-    sdsfree(aux);
+    sdstrim(cmd, "[% ]");
+    tokens = sdssplitlen(cmd, sdslen(cmd), " ", 1, &c);
+
+    reg_variable(b, tokens[2], tokens[1]);
+
+    sdsfreesplitres(tokens, c);
+    sdsfree(cmd);
 }
 
 // MAP <FUNC> <LENGHT> <LIST>
-void map(char* str) {
+void flint_map(char* str) {
     int i, c;
     sds *tokens;
     sds aux = sdsnew(str), ln_aux = sdsempty();
 
-    build_strapp_line(b, 0);
+    build_strapp_line(b);
 
     sdstrim(aux, "[% ]");
     tokens = sdssplitlen(aux, sdslen(aux), " ", 1, &c);
@@ -45,7 +51,9 @@ void map(char* str) {
 
     // Appends aux to return string
     add_attribute(b, "aux");
-    build_strapp_line(b, 1);
+    inc_indent(b);
+    build_strapp_line(b);
+    dec_indent(b);
 
     // Frees aux
     push_line(b, "\tfree(aux);");
@@ -57,6 +65,39 @@ void map(char* str) {
     sdsfree(aux);
 }
 
+// IF <C>
+void flint_if(char* str) {
+    sds cmd = sdsnew(str), aux;
+    sdstrim(cmd, "[% ]");
+    sdsrange(cmd, 2, -1);
+
+    aux = sdscatprintf(sdsempty(), "if (%s) {", cmd);
+    push_sds_line(b, aux);
+
+    inc_indent(b);
+
+    sdsfree(aux);
+    sdsfree(cmd);
+}
+
+// ENDIF
+void flint_endif() {
+    dec_indent(b);
+    push_line(b, "}");
+}
+
+// Anotates a inline variable and adds it to the current line
+void flint_invar(char* name) {
+    sds aux = sdsnew(name);
+    sdstrim(aux, "[% ]");
+
+    reg_variable(b, aux, "char*");
+    add_attribute(b, aux);
+
+    sdsfree(aux);
+}
+
+
 void new_function(char* name) {
     sds aux = sdsnew(name);
     sdstrim(aux, "={");
@@ -66,7 +107,7 @@ void new_function(char* name) {
 
 void end_template_line() {
     cat_line(b, "\\n");
-    build_strapp_line(b, 0);
+    build_strapp_line(b);
 }
 
 void end_function() {
