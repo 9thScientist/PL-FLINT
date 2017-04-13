@@ -1,11 +1,9 @@
 %{
 #include <string.h>
 #include "aux.h"
+#include "buffer.h"
 
-sds func; // Dynamic String for function header
-GHashTable* varstype; // Hashtable that matches variable -> type
-GQueue* lines; //Lines in the template
-sds line, att; //Dynamic Strings for current line
+BUFFER b;
 %}
 %option noyywrap
 %x CODE TEMPLATE
@@ -14,22 +12,21 @@ sds line, att; //Dynamic Strings for current line
 <*>\/\/FLINT { BEGIN CODE; }
 <*>#include\ <glib.h> { include_glib = 0; }
 
-<TEMPLATE>\[%\ MAP\ .+\ %\] { end_line(); map(yytext); }
-<TEMPLATE>\[%\ [^ ]+\ %\] { variable(yytext, "char*"); }
-<TEMPLATE>\}\} { end_line(); end_function(); BEGIN CODE; }
-<TEMPLATE>\n { line = sdscat(line, "\\n"); end_line();}
-<TEMPLATE>. { line = sdscat(line, yytext); }
+<TEMPLATE>\[%\ MAP\ .+\ %\] { map(yytext); }
+<TEMPLATE>\[%\ [^ ]+\ %\] { variable(yytext); }
+<TEMPLATE>\}\} { end_function(); BEGIN CODE; }
+<TEMPLATE>\n { end_template_line(); }
+<TEMPLATE>. { cat_line(b, yytext); }
 
 <CODE>.+=\{\{ { print_include_glib(&include_glib);
                 BEGIN TEMPLATE;
-                begin_function(yytext); }
+                new_function(yytext); }
 <CODE>.|\n { ECHO; }
 
 %%
 int main (int argc, char* argv[]) {
+    b = b_init();
     int i;
-    varstype = g_hash_table_new(NULL, g_str_equal);
-    lines = g_queue_new();
 
     if(argc >= 2) {
         yyin = fopen(argv[1], "r");
