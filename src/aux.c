@@ -2,7 +2,7 @@
 
 void print_include_glib(int* ig) {
     if (*ig)
-        fprintf(yyout,"#include <glib.h>\n");
+        fprintf(yyout,"#include <glib.h>\n\n");
 
     *ig = 0;
 
@@ -70,7 +70,7 @@ void end_template_line() {
 }
 
 void end_function() {
-    end_template_line();
+    cat_line(b, "\\n");
 
     build_header(b);
     print_buffer(b, yyout);

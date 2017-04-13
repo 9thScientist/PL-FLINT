@@ -44,7 +44,7 @@ void add_attribute(BUFFER b, char* str) {
 // Start building function with given name
 void begin_function(BUFFER b, char* name) {
     b->hdr = sdscatprintf(sdsempty(), "char* %s(", name);
-    push_line(b, "GString *str = g_string_new(NULL);");
+    push_line(b, "GString *str = g_string_new(NULL);\n");
 }
 
 void add_param_function_aux(BUFFER b, char* type, char* name) {
