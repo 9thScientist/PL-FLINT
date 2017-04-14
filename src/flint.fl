@@ -13,9 +13,11 @@ BUFFER b;
 <*>#include\ <glib.h> { include_glib = 0; }
 
 <TEMPLATE>\[%\ VAR\ .+\ %\] { flint_var(yytext); }
+<TEMPLATE>\[%\ CALL\ .+\ %\] { flint_call(yytext); }
 <TEMPLATE>\[%\ MAP\ .+\ %\] { flint_map(yytext); }
 <TEMPLATE>\[%\ IF\ .+\ %\] { flint_if(yytext); }
 <TEMPLATE>\[%\ ENDIF\ %\] { flint_endif(yytext); }
+<TEMPLATE>\[%\ BREAK\ %\] { flint_break(yytext); }
 <TEMPLATE>\[%\ [^ ]+\ %\] { flint_invar(yytext); }
 <TEMPLATE>\}\} { end_function(); BEGIN CODE; }
 <TEMPLATE>\n { end_template_line(); }

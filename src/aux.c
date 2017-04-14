@@ -24,6 +24,35 @@ void flint_var(char* str) {
     sdsfree(cmd);
 }
 
+// Calls a function
+// CALL <FUNC> <ARGUMENTS...>
+void flint_call(char* str) {
+    sds cmd = sdsnew(str), arg_tmp = sdsempty(), cll_tmp;
+    sds *tokens;
+    int i, c;
+
+    sdstrim(cmd, "[% ]");
+    sdsrange(cmd, 5, -1);
+    tokens = sdssplitlen(cmd, sdslen(cmd), " ", 1, &c);
+
+    // prepare arguments of function call
+    for (i = 1; i < c; i++)
+        arg_tmp = sdscatprintf(arg_tmp, "%s, ", tokens[i]);
+    sdstrim(arg_tmp, ", ");
+
+    // prepare function call
+    cll_tmp = sdscatprintf(sdsempty(), "%s(%s)", tokens[0], arg_tmp);
+
+    // Add atribute and build line
+    add_attribute(b, cll_tmp);
+    build_strapp_line(b);
+
+    sdsfreesplitres(tokens, c);
+    sdsfree(cmd);
+    sdsfree(arg_tmp);
+    sdsfree(cll_tmp);
+}
+
 // MAP <FUNC> <LENGHT> <LIST>
 void flint_map(char* str) {
     int i, c;
@@ -84,6 +113,11 @@ void flint_if(char* str) {
 void flint_endif() {
     dec_indent(b);
     push_line(b, "}");
+}
+
+// BREAK
+void flint_break() {
+   push_line(b, "return g_string_free(str, FALSE);");
 }
 
 // Anotates a inline variable and adds it to the current line
