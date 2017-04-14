@@ -1,4 +1,9 @@
+#include <ctype.h>
+#include <string.h>
 #include "aux.h"
+
+sds* vars_condition(sds cnd, int *length);
+sds clean(sds str, char c);
 
 void print_include_glib(int* ig) {
     if (*ig)
@@ -15,7 +20,7 @@ void flint_var(char* str) {
     sds *tokens;
     int c;
 
-    sdstrim(cmd, "[% ]");
+    sdstrim(cmd, "[% ]\n");
     tokens = sdssplitlen(cmd, sdslen(cmd), " ", 1, &c);
 
     reg_variable(b, tokens[2], tokens[1]);
@@ -31,7 +36,7 @@ void flint_call(char* str) {
     sds *tokens;
     int i, c;
 
-    sdstrim(cmd, "[% ]");
+    sdstrim(cmd, "[% ]\n");
     sdsrange(cmd, 5, -1);
     tokens = sdssplitlen(cmd, sdslen(cmd), " ", 1, &c);
 
@@ -61,7 +66,7 @@ void flint_map(char* str) {
 
     build_strapp_line(b);
 
-    sdstrim(aux, "[% ]");
+    sdstrim(aux, "[% ]\n");
     tokens = sdssplitlen(aux, sdslen(aux), " ", 1, &c);
 
     // registers found variables
@@ -97,9 +102,18 @@ void flint_map(char* str) {
 // IF <C>
 void flint_if(char* str) {
     sds cmd = sdsnew(str), aux;
-    sdstrim(cmd, "[% ]");
+    sds *vars;
+    int i, c;
+    sdstrim(cmd, "[% ]\n");
     sdsrange(cmd, 2, -1);
 
+    // Anotates variable in condition
+    vars = vars_condition(cmd, &c);
+    for (i = 0; i < c; i++)
+        reg_variable(b, vars[i], "int");
+
+    cmd = clean(cmd, ':');
+    // Writes if
     aux = sdscatprintf(sdsempty(), "if (%s) {", cmd);
     push_sds_line(b, aux);
 
@@ -107,6 +121,7 @@ void flint_if(char* str) {
 
     sdsfree(aux);
     sdsfree(cmd);
+    sdsfreesplitres(vars, c);
 }
 
 // ENDIF
@@ -123,7 +138,7 @@ void flint_break() {
 // Anotates a inline variable and adds it to the current line
 void flint_invar(char* name) {
     sds aux = sdsnew(name);
-    sdstrim(aux, "[% ]");
+    sdstrim(aux, "[% ]\n");
 
     reg_variable(b, aux, "char*");
     add_attribute(b, aux);
@@ -151,4 +166,32 @@ void end_function() {
     print_buffer(b, yyout);
 
     reset(b);
+}
+
+sds clean(sds str, char c) {
+    int i, l = sdslen(str);
+
+    for (i = 0; i < l; i++)
+        str[i] = (str[i] == c) ? ' ' : str[i];
+
+    return str;
+}
+
+// returns variables in condition
+sds* vars_condition(sds cnd, int *length) {
+    sds aux = sdsdup(cnd);
+    sds *r;
+    int ig, i, l = sdslen(aux);
+
+    ig = 0;
+    for(i = 0; i < l; i++) {
+        ig = (strchr("'\":", aux[i])) ? !ig : ig;
+        if (ig || isupper(aux[i]) || strchr("<>=!|&()'\",-+/;:", aux[i]) || isdigit(aux[i]))
+            aux[i] = ' ';
+    }
+
+    r = sdssplitargs(aux, length);
+    sdsfree(aux);
+
+    return r;
 }

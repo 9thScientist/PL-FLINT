@@ -151,7 +151,7 @@ int contains(GQueue* q, char* s) {
 
     l = g_queue_get_length(q);
 
-    for (i = 0; i < l; i++) {
+    for (i = 0; r == -1 && i < l; i++) {
         t = g_queue_peek_nth(q, i);
         r = (!strcmp(t, s)) ? i : -1;
     }
