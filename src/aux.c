@@ -124,6 +124,38 @@ void flint_if(char* str) {
     sdsfreesplitres(vars, c);
 }
 
+void flint_elif(char* str) {
+    sds cmd = sdsnew(str), aux;
+    sds *vars;
+    int i, c;
+    sdstrim(cmd, "[% ]\n");
+    sdsrange(cmd, 4, -1);
+
+    // Anotates variable in condition
+    vars = vars_condition(cmd, &c);
+    for (i = 0; i < c; i++)
+        reg_variable(b, vars[i], "int");
+
+    cmd = clean(cmd, ':');
+    // Writes else if
+    dec_indent(b);
+    aux = sdscatprintf(sdsempty(), "} else if (%s) {", cmd);
+    push_sds_line(b, aux);
+
+    inc_indent(b);
+
+    sdsfree(aux);
+    sdsfree(cmd);
+    sdsfreesplitres(vars, c);
+}
+
+// ELSE
+void flint_else() {
+    dec_indent(b);
+    push_line(b, "} else {");
+    inc_indent(b);
+}
+
 // ENDIF
 void flint_endif() {
     dec_indent(b);

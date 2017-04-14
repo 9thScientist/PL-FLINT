@@ -12,6 +12,8 @@ void flint_call(char* str);
 void flint_map(char* str);
 void flint_if(char* str);
 void flint_invar(char* name);
+void flint_else();
+void flint_elif(char* str);
 void flint_endif();
 void flint_break();
 void new_function(char* name);

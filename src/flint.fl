@@ -16,8 +16,10 @@ BUFFER b;
 <TEMPLATE>\[%\ CALL\ .+\ %\]\n? { flint_call(yytext); }
 <TEMPLATE>\[%\ MAP\ .+\ %\] { flint_map(yytext); }
 <TEMPLATE>\[%\ IF\ .+\ %\]\n? { flint_if(yytext); }
-<TEMPLATE>\[%\ ENDIF\ %\]\n? { flint_endif(yytext); }
-<TEMPLATE>\[%\ BREAK\ %\]\n? { flint_break(yytext); }
+<TEMPLATE>\[%\ ELSE\ %\]\n? { flint_else(); }
+<TEMPLATE>\[%\ ELIF\ .+\ %\]\n? { flint_elif(yytext); }
+<TEMPLATE>\[%\ ENDIF\ %\]\n? { flint_endif(); }
+<TEMPLATE>\[%\ BREAK\ %\]\n? { flint_break(); }
 <TEMPLATE>\[%\ [^ ]+\ %\] { flint_invar(yytext); }
 <TEMPLATE>\}\} { end_function(); BEGIN CODE; }
 <TEMPLATE>\n { end_template_line(); }
