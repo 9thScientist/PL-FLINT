@@ -1,0 +1,143 @@
+%
+% Layout retirado de http://www.di.uminho.pt/~prh/curplc09.html#notas
+%
+\documentclass[12pt]{report}
+\usepackage[portuges]{babel}
+\usepackage[utf8]{inputenc}
+%\usepackage[latin1]{inputenc}
+\usepackage{enumerate}
+\usepackage{graphicx}
+\usepackage{verbatim}
+\usepackage{listings, color}
+\usepackage{float}
+%\usepackage[cc]{titlepic}
+\usepackage{titlepic}
+\usepackage{float}
+
+%\usepackage{alltt}
+%\usepackage{fancyvrb}
+\usepackage{listings}
+%LISTING - GENERAL
+\lstset{
+	basicstyle=\small,
+	numbers=left,
+	numberstyle=\tiny,
+	numbersep=5pt,
+	breaklines=true,
+    frame=tB,
+	mathescape=true,
+	escapeinside={(*@}{@*)}
+}
+%
+\lstset{ %
+%	language=gawk,							% choose the language of the code
+    language=XML,
+	basicstyle=\ttfamily\footnotesize,		% the size of the fonts that are used for the code
+%	keywordstyle=\bfseries,					% set the keyword style
+%	%numbers=left,							% where to put the line-numbers
+%	numberstyle=\scriptsize,				% the size of the fonts that are used for the line-numbers
+%	stepnumber=2,							% the step between two line-numbers. If it's 1 each line
+%											% will be numbered
+%	numbersep=5pt,							% how far the line-numbers are from the code
+%	backgroundcolor=\color{white},			% choose the background color. You must add \usepackage{color}
+	showspaces=false,						% show spaces adding particular underscores
+	showstringspaces=false,					% underline spaces within strings
+	showtabs=false,							% show tabs within strings adding particular underscores
+	mathescape=false,
+	literate={á}{{\'a}}1 {ã}{{\~a}}1 {é}{{\'e}}1,
+%	prebreak = \raisebox{0ex}[0ex][0ex]{\ensuremath{\hookleftarrow}},
+%	frame=none,								% adds a frame around the code
+%	%abovecaptionskip=-.8em,
+%	%belowcaptionskip=.7em,
+%	tabsize=2,								% sets default tabsize to 2 spaces
+%	captionpos=b,							% sets the caption-position to bottom
+%	breaklines=true,						% sets automatic line breaking
+%	breakatwhitespace=false,				% sets if automatic breaks should only happen at whitespace
+%	title=\lstname,							% show the filename of files included with \lstinputlisting;
+%											% also try caption instead of title
+%	escapeinside={\%*}{*)},					% if you want to add a comment within your code
+%	morekeywords={*,...}					% if you want to add more keywords to the set
+}
+
+\lstdefinestyle{listXML}{language=XML, extendedchars=true,  belowcaptionskip=5pt, xleftmargin=1.8em, xrightmargin=0.5em, numbers=left, numberstyle=\small\ttfamily\bf, frame=single, breaklines=true, breakatwhitespace=true, breakindent=0pt, emph={}, emphstyle=\color{red}, basicstyle=\small\ttfamily, columns=fullflexible, showstringspaces=false, commentstyle=\color{gray}\upshape,
+    morestring=[b]",
+    morecomment=[s]{<?}{?>},
+    morecomment=[s][\color{orange}]{<!--}{-->},
+    keywordstyle=\color{blue},
+    stringstyle=\color{cyan},
+    tagstyle=\color{blue},
+    morekeywords={id,cliente,nif,nome,morada,localidade,codigo_postal, transacao, data_entrada, hora_entrada, entrada, data_saida, hora_saida, saida, importancia, valor_desconto, taxa_iva, operador, tipo, data_debito, cartao}
+}
+
+\usepackage{xspace}
+
+\parindent=0pt
+\parskip=2pt
+
+\setlength{\oddsidemargin}{-0.3cm}
+\setlength{\textwidth}{17cm}
+\setlength{\headsep}{-1cm}
+\setlength{\textheight}{23cm}
+%\setlength{\parindent}{4em}
+\setlength{\parskip}{1em}
+
+\let\emph\relax
+\DeclareTextFontCommand{\emph}{\bfseries\em}
+
+
+\def\darius{\textsf{Darius}\xspace}
+\def\antlr{\texttt{AnTLR}\xspace}
+\def\pe{\emph{Publicação Eletrónica}\xspace}
+
+\def\titulo#1{\section{#1}}
+\def\super#1{{\em Supervisor: #1}\\ }
+\def\area#1{{\em \'{A}rea: #1}\\[0.2cm]}
+\def\resumo{\underline{Resumo}:\\ }
+
+
+\setcounter{tocdepth}{2}
+%\setcounter{secnumdepth}{4}
+
+%%%%\input{LPgeneralDefintions}
+\title{\line(1,0){500}\\Processamento de Linguagens\\ \textbf{Parte I - B}\\FLINT\\Flex Inline Template\\\line(1,0){500}}
+\author{Bruno Cancelinha \\(A75428) \and
+        José Bastos\\ (AXXXXX) \and 
+        Marcelo Miranda\\ (AXXXXX)
+        } 
+\titlepic{\includegraphics[scale=0.8]{img/uminho.png}}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+
+\begin{abstract}
+FLINT - Uma ferramenta simples que visa a tornar mais fácil a criação de templates para strings em C.
+\end{abstract}
+
+\include{introducao}
+\newpage
+
+\include{analise}
+\newpage
+
+\include{flint}
+
+\include{implementacao}
+\newpage
+
+\include{testes}
+\newpage
+
+\include{conclusao}
+\newpage
+
+\appendix
+
+\include{exemplos}
+\newpage
+
+\end{document} 

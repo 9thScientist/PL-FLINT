@@ -1,0 +1,137 @@
+\chapter{Ferramenta FLINT}
+A ferramenta \emph{FLINT} (\textbf{Fl}ex \textbf{In}line \textbf{T}emplate), vem como resposta ao problema de tratamento de \textit{strings} em C, facilitando a criação e uso de modelos na linguagem. Traz consigo um processador de modelos, escrito usando \emph{Flex}, que converte a linguagem de modelação \textbf{FLINT} numa função em C que recebe os dados usados durante o modelo, e retorna a \textit{string} já formatada. FLINT tem a capacidade de reconhecer, na maior parte dos casos, as variáveis usadas no modelo, essas variáveis aparecerão como argumentos da função gerada pela ordem que aparecerem no código, ignorando casos em que aparecem repetidas.
+
+% explicar //FLINT
+Um documento começa com a primeira linha \texttt{//FLINT} para não deixar dúvidas de que se trata de facto de um ficheiro FLINT. De seguida vem as funções FLINT que será explicada em mais detalhe da secção seguinte mas, basicamente, funções FLINT são um \textit{template}, são a parte de texto que será convertida em código C. O FLINT é suficientemente inteligente para distinguir o código C dos modelos, portanto mantém intacto qualquer código que o ficheiro original contenha.
+
+% Explicar GStrings
+As \textit{strings} em C, como já foi referido neste relatório, não estão pensadas para lidar com tamanhos variáveis, isto é, não são dinâmicas. Não passam de uma sequência fixa de bytes terminada com um byte a NULL, o chamado \textit{NULL terminator}. Embora este comportamento seja compreensível e, muitas vezes adequado, para um processador de modelos é esperado que seja capaz de suportar qualquer que seja o tamanho dos dados que lhe desejamos passar, e não podemos prever qual o tamanho dos dados que serão utilizados em conjunto com o modelo. Por esta mesma razão, decidimos que seria necessário o uso das \emph{GStrings} do \emph{GLib}. Assim, o código gerado pelo \textbf{FLINT} usará \texttt{GString}s. O FLINT certifica-se que o código de \textit{output} tem o \texttt{\#include <glib.h>}, colocando-o caso este não esteja presente no ficheiro de \textit{input} e não fazendo nada se estiver.
+
+
+É possível converter algo como:
+\begin{lstlisting}
+Greeting={{Bem-vindo [% nome %].}} 
+\end{lstlisting}
+No código C seguinte:
+\
+\begin{lstlisting}[float,floatplacement=H]
+char* Greeting( char* nome) {
+    GString *str = g_string_new(NULL);
+    
+    g_string_append_printf(str, "Bem-vindo %s.", nome);
+    
+    return g_string_free(str, FALSE);
+}
+\end{lstlisting}
+
+\section{Notação}
+
+Nesta secção vamos ver como é a notação da linguagem de modelação FLINT e a sua robustez. Para distinguir caracteres pertencentes ao modelo de variáveis e outras características da linguagem FLINT, estas palavras especiais são colocadas entre \texttt{[\% \%]}, sendo que qualquer caracter que não pertença a esta notação FLINT, incluindo \texttt{\textbackslash n} e outros caracteres especiais, serão considerados na string a retornar.
+
+\subsection{Funções}
+Como já foi dito acima, FLINT baseia-se em funções que são nada mais que modelos a serem convertidos em C.
+
+Uma função FLINT é definida entre chavetas duplas e é-lhe atribuida um nome com o simbolo de igual. Assim, \texttt{Func=\{\{ MODELO \}\}} representa uma função de nome \texttt{Func}, neste caso \texttt{MODELO} é só um marcador de posição sem qualquer valor semântico. Devido ao facto de qualquer caracter dentro das duplas chavetas será considerado na \emph{string} resultante, a posição das duplas chavetas \texttt{\}\}} é bastante relevante. 
+
+\subsection{Declaração de variáveis}
+Apesar da capacidade do FLINT, de automaticamente detetar variáveis no modelo e as coloca como atributos da função gerada, é por vezes necessário explicitar essas variáveis. Assim, para declarar uma varíavel com o nome \texttt{idade} do tipo \texttt{int}:
+\begin{lstlisting}
+[% VAR int idade %]
+\end{lstlisting}
+Se o nome da variável já estiver a ser utilizado antes da declaração, o FLINT já a terá registado, embora é provável que com um tipo diferente do pretendido e esta declaração é simplesmente ignorada. De qualquer maneira, esta funcionalidade é útil em \texttt{IF}s e em \emph{variáveis em linha}. como veremos à frente.
+
+\subsection{Variáveis em linha}
+
+O mais simples dos processadores de modelos tem que incluir, pelo menos, a funcionalidade de substituição simples de variáveis no meio do \textit{template}. Assim, sendo este um característica tão simples, será simplesmente o nome da variável entre a notação do FLINT \texttt{[\% \%]}, como será possível confirmar no exemplo dado no início deste capítulo. Quando o FLINT encontra \emph{variáveis em linha}, ou \textit{inline variables}, regista automaticamente o seu nome para ser colocada nos argumentos da função gerada, por omissão regista a variável com tipo \texttt{char*}, mas o FLINT suporta o caso da variável já ter sido declarada com o tipo \texttt{float} ou \texttt{int}. Assim é possível fazer algo como:
+
+\begin{lstlisting}
+Greeting={{Olá [% nome %]!
+[% VAR int idade %]
+Tu tens [% idade %], certo? }}
+\end{lstlisting}
+Neste exemplo, FLINT regista a varíavel \texttt{char* nome} e \texttt{int idade}, por esta ordem.
+
+\subsection{Mapeamentos}
+
+Para além da trivial variável em linha, o FLINT suporta \emph{mapeamentos}, que são representados da seguinte maneira:
+\begin{lstlisting}
+[% MAP Func n l %]
+\end{lstlisting}
+Mapeamentos permitem mapear a função \texttt{Func} a uma lista \texttt{l} com \texttt{n} elementos. Chamando a função \texttt{Func} para cada elemento de \texttt{l}, havendo a restrição de que a função apenas pode receber um argumento do tipo \texttt{char*}.
+
+Quando o FLINT encontra um mapeamento, regista a variável \texttt{n} do tipo \texttt{int} e \texttt{l} do tipo \texttt{char**}.
+
+\subsection{Expressões condicionais}
+
+% IF ELIF ELSE ENDIF BREAK
+
+Nem sempre tudo o que está no modelo corresponde ao que desejamos apresentar. Podemos querer ter um modelo que varia consoante os dados. Trata-se aqui a questão de controlo de fluxo, permitir que certas partes do modelo sejam apresentadas ou não, consoante os dados perante a condição imposta.
+
+O FLINT também permite \emph{expressões condicionais} do tipo \emph{if}, \emph{else if} e \emph{else}. Um bloco \texttt{IF} termina obrigatoriamente com \texttt{ENDIF} e pode, ou não, conter blocos \texttt{ELIF}, que representa o \textit{else if}, e \texttt{ELSE}. Tanto o \texttt{IF} como o \texttt{ELIF} recebem uma condição como argumentos, qualquer variável encontrada nessa condição é registada como sendo do tipo \texttt{int}, a não ser que já tenha sido registada anteriormente.
+
+\begin{lstlisting}[float,floatplacement=H]
+[% IF sexo == FEMININO %]
+Estás muito bonita hoje.
+[% ELIF sexo == MASCULINO %]
+Estás muito bonito hoje.
+[% ELSE %]
+Bom dia.
+[% ENDIF %]
+\end{lstlisting}
+
+No exemplo acima, caso \texttt{sexo} seja \texttt{FEMININO},  é apresentada a \textit{string} \texttt{"Estás muito bonita hoje"}, \texttt{"Estás muito bonito hoje"} caso \texttt{sexo} seja \texttt{MASCULINO} ou \texttt{"Bom dia."} em qualquer outro caso. O FLINT automaticamente deteta a palavra \texttt{sexo} como uma variável do tipo \texttt{int}, e ignora as palavras \texttt{FEMININO} e \texttt{MASCULINO} assumindo que se tratam de constantes pelo facto de estarem escritas todas em maiúsculas. O FLINT vai detetar qualquer palavra minúscula como uma variável a não ser que esteja protegida pelo carácter \texttt{:}, muito útil quando a condição chama funções em C. 
+
+\noindent
+\begin{minipage}{\textwidth}
+\begin{lstlisting}%[float,floatplacement=H]
+
+Olá [% nome %]!
+[% IF (:strcmp:(nome, "Maria") == 0) || (:strcmp:(nome, "João") == 0) %]
+Tu outra vez!?
+[% ENDIF %]
+\end{lstlisting}
+\end{minipage}
+
+Aproveitamos o exemplo de cima para demonstrar, para além do uso do \textit{escape character} \texttt{:}, o uso de uma disjunção, embora conjunções também sejam possíveis, aliás, qualquer condição que funcionaria em C, irá funcionar no FLINT.
+
+\subsection{Chamamento de funções}
+
+É possível chamar funções FLINT dentro dum modelo usando a expressão \texttt{CALL}, seguida do nome da função e os seus argumentos. Estes argumentos são variáveis que constarão nos argumentos da função gerada, se não tiverem já sido referidos antes da expressão \texttt{CALL}, o FLINT vai assumi-los como \texttt{char*}. Para além da função \texttt{CALL}, o FLINT permite \texttt{BREAK} que sai do modelo.
+
+ \noindent
+\begin{minipage}{\textwidth}
+\begin{lstlisting}
+Nome={{
+Nome: [% nome %]}}
+
+Idade={{
+[% IF i < 18 %]
+[% BREAK %]
+[% ENDIF %]
+Idade: [% i %]}}
+
+Info={{
+[% CALL Nome nome %]
+[% VAR int idade %]
+[% CALL Idade idade %]
+}}
+\end{lstlisting}
+\end{minipage}
+
+No exemplo acima, a função \texttt{Idade} termina logo se o valor de \texttt{i} for inferior a $18$. Podemos também observar que a função \texttt{Info} chama as duas funções anteriores, tendo o cuidado de declarar a variável \texttt{idade} como um inteiro.
+
+\section{Output}
+
+\begin{lstlisting}
+char* FUNCAO( ... ) {
+	GString *str = g_string_new(NULL);
+	
+	(...)
+	g_string_append_printf(str, "%s", VAR);
+	(...)
+	
+	return g_string_free(str, FALSE);
+}
+\end{lstlisting}
+
+\section{Flags}
