@@ -15,6 +15,7 @@ struct buffer {
 void add_param_function(gpointer name, gpointer type, gpointer b);
 int contains(GQueue* q, char* s);
 void print_line(gpointer line, gpointer o);
+void get_attribute_type(BUFFER b, char *name, char *type);
 
 BUFFER b_init() {
     BUFFER b = malloc(sizeof(struct buffer));
@@ -56,7 +57,9 @@ void cat_line(BUFFER b, char* str) {
 
 // Adds attributes to line
 void add_attribute(BUFFER b, char* str) {
-    b->line = sdscat(b->line, "%s");
+    char type[2]; // could be either "%s", "%d" or "%f"
+    get_attribute_type(b, str, type);
+    b->line = sdscat(b->line, type);
     b->att = sdscatprintf(b->att, ", %s", str);
 }
 
@@ -157,4 +160,24 @@ int contains(GQueue* q, char* s) {
     }
 
     return r;
+}
+
+/* returns attribute type.
+ * returns %s if var type is char* (default)
+ * returns %d if var type is int
+ * returns %f if var type is float
+ */
+void get_attribute_type(BUFFER b, char *name, char *type) {
+    int p;
+    char *t;
+
+    p = contains(b->var_name, name);
+    t = g_queue_peek_nth(b->var_type, p);
+
+    if (!strcmp(t, "int"))
+        strcpy(type, "%d");
+    else if (!strcmp(t, "float"))
+        strcpy(type, "%f");
+    else
+        strcpy(type, "%s");
 }
