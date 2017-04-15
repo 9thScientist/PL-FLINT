@@ -41,8 +41,10 @@ void flint_call(char* str) {
     tokens = sdssplitlen(cmd, sdslen(cmd), " ", 1, &c);
 
     // prepare arguments of function call
-    for (i = 1; i < c; i++)
+    for (i = 1; i < c; i++) {
         arg_tmp = sdscatprintf(arg_tmp, "%s, ", tokens[i]);
+        reg_variable(b, tokens[i], "char*");
+    }
     sdstrim(arg_tmp, ", ");
 
     // prepare function call

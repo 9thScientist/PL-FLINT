@@ -172,12 +172,17 @@ void get_attribute_type(BUFFER b, char *name, char *type) {
     char *t;
 
     p = contains(b->var_name, name);
-    t = g_queue_peek_nth(b->var_type, p);
 
-    if (!strcmp(t, "int"))
-        strcpy(type, "%d");
-    else if (!strcmp(t, "float"))
-        strcpy(type, "%f");
-    else
+    if (p != -1) {
+        t = g_queue_peek_nth(b->var_type, p);
+
+        if (!strcmp(t, "int"))
+            strcpy(type, "%d");
+        else if (!strcmp(t, "float"))
+            strcpy(type, "%f");
+        else
+            strcpy(type, "%s");
+    } else
         strcpy(type, "%s");
+
 }
