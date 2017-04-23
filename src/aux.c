@@ -32,7 +32,8 @@ void flint_var(char* str) {
 // Calls a function
 // CALL <FUNC> <ARGUMENTS...>
 void flint_call(char* str) {
-    sds cmd = sdsnew(str), arg_tmp = sdsempty(), cll_tmp;
+    sds cmd = sdsnew(str), arg_tmp = sdsempty();
+    sds cll_tmp, nm_tmp;
     sds *tokens;
     int i, c;
 
@@ -47,17 +48,27 @@ void flint_call(char* str) {
     }
     sdstrim(arg_tmp, ", ");
 
+    // prepare name of aux variable
+    nm_tmp = sdscatprintf(sdsempty(), "%s_aux", tokens[0]);
+
     // prepare function call
-    cll_tmp = sdscatprintf(sdsempty(), "%s(%s)", tokens[0], arg_tmp);
+    cll_tmp = sdscatprintf(sdsempty(), "char* %s = %s(%s);", nm_tmp, tokens[0], arg_tmp);
+    push_line(b, cll_tmp);
 
     // Add atribute and build line
-    add_attribute(b, cll_tmp);
+    add_attribute(b, nm_tmp);
     build_strapp_line(b);
+
+    // Frees aux variable
+    sdsfree(cll_tmp);
+    cll_tmp = sdscatprintf(sdsempty(), "free(%s);", nm_tmp);
+    push_line(b, cll_tmp);
 
     sdsfreesplitres(tokens, c);
     sdsfree(cmd);
     sdsfree(arg_tmp);
     sdsfree(cll_tmp);
+    sdsfree(nm_tmp);
 }
 
 // MAP <FUNC> <LENGHT> <LIST>
