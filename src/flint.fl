@@ -1,0 +1,49 @@
+%{
+#include <string.h>
+#include "aux.h"
+#include "buffer.h"
+
+BUFFER b;
+%}
+%option noyywrap
+%x CODE TEMPLATE
+%%
+  int include_glib = 1;
+<*>\/\/\ *FLINT { BEGIN CODE; }
+<*>#include\ <glib.h> { include_glib = 0; }
+
+<TEMPLATE>\[%\ VAR\ .+\ %\]\n? { flint_var(yytext); }
+<TEMPLATE>\[%\ CALL\ .+\ %\]\n? { flint_call(yytext); }
+<TEMPLATE>\[%\ MAP\ .+\ %\] { flint_map(yytext); }
+<TEMPLATE>\[%\ IF\ .+\ %\]\n? { flint_if(yytext); }
+<TEMPLATE>\[%\ ELSE\ %\]\n? { flint_else(); }
+<TEMPLATE>\[%\ ELIF\ .+\ %\]\n? { flint_elif(yytext); }
+<TEMPLATE>\[%\ ENDIF\ %\]\n? { flint_endif(); }
+<TEMPLATE>\[%\ BREAK\ %\]\n? { flint_break(); }
+<TEMPLATE>\[%\ [^ ]+\ %\] { flint_invar(yytext); }
+<TEMPLATE>\}\} { end_function(); BEGIN CODE; }
+<TEMPLATE>\n { end_template_line(); }
+<TEMPLATE>. { cat_line(b, yytext); }
+
+<CODE>.+=\{\{ { print_include_glib(&include_glib);
+                BEGIN TEMPLATE;
+                new_function(yytext); }
+<CODE>.|\n { ECHO; }
+
+%%
+int main (int argc, char* argv[]) {
+    b = b_init();
+    int i;
+
+    if(argc >= 2) {
+        yyin = fopen(argv[1], "r");
+
+        for(i = 0; i < argc; i++) {
+            if (!strcmp(argv[i], "-o"))
+                yyout = fopen(argv[++i], "w");
+        }
+    }
+    yylex();
+
+    return 0;
+}

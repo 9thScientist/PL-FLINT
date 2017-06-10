@@ -27,7 +27,17 @@
 *.i*86
 *.x86_64
 *.hex
+flint
 
 # Debug files
 *.dSYM/
 *.su
+
+# Vim temp files
+*.swp
+
+# Flex compiled files
+lex.yy.c
+
+# Flint files
+*.flint
