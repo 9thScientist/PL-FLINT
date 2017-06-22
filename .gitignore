@@ -40,4 +40,4 @@ flint
 lex.yy.c
 
 # Flint files
-*.flint
+# *.flint

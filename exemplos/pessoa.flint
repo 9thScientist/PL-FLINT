@@ -1,0 +1,34 @@
+//FLINT
+#include <stdio.h>
+#include <stdlib.h>
+#define SIZE 100
+
+Morada={{
+\t[% rua %]
+\t[% codigo_postal %]
+\t[% cidade %]
+}}
+
+Pessoa={{Nome: [% nome %]
+[% VAR int idade %]
+Idade: [% idade %]
+Morada: [% CALL Morada rua codigo_postal cidade %]
+}}
+
+
+int main() {
+
+    char nome[SIZE] = "Teófilo de Braga";
+    char rua[SIZE] = "Rua da República Nº 1";
+    char codigo[SIZE] = "1700-320";
+    char cidade[SIZE] = "Lisboa";
+    int idade = 174;
+    char *postal;
+
+    postal = Pessoa(nome, idade, rua, codigo, cidade);
+
+    printf("%s\n", postal);
+    free(postal);
+
+    return 0;
+}

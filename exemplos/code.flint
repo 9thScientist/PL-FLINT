@@ -1,0 +1,48 @@
+//FLINT
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#define SIZE 100
+
+Str={{
+[% pal %]
+}}
+
+Cartao={{
+O teu nome é [% nome %].
+Tu gostas de:
+[% MAP Str gn gs %]
+}}
+
+Pessoa={{
+[% IF idade < 18 %]
+Não tens idade para aceder a estes conteúdos!
+[% ELIF idade == 18 %]
+Tu tens 18 anos! :D
+[% ELSE %]
+[% VAR int gn %]
+[% VAR char** gs %]
+[% CALL Cartao nome gn gs %]
+[% ENDIF %]
+}}
+
+
+int main() {
+    int i;
+    char *gostos[5];
+
+    gostos[0] = strdup("Chocolate");
+    gostos[1] = strdup("Bolachas");
+    gostos[2] = strdup("Pink Floyd");
+    gostos[3] = strdup("Fernando Pessoa");
+    gostos[4] = strdup("Pudim Flan");
+
+    scanf("%d", &i);
+
+    char *pessoa = Pessoa(i, 5, gostos, "José Saramago");
+
+    printf("%s\n", pessoa);
+    free(pessoa);
+
+    return 0;
+}
